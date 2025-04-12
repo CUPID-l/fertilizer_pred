@@ -37,7 +37,7 @@ class FTTransformer(torch.nn.Module):
 
 # Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-num_features = 23
+num_features = 20  # 6 (topsoil) + 6 (subsoil) + 6 (deepsoil) + 1 (soil) + 1 (crop)
 num_classes = 7
 
 model = FTTransformer(num_features=num_features, num_classes=num_classes).to(device)
@@ -65,15 +65,22 @@ fertilizer_labels = {
 }
 
 class SoilInput(BaseModel):
-    topsoil: List[float]
-    subsoil: List[float]
-    deepsoil: List[float]
+    topsoil: List[float]  # [Temperature, Humidity, pH, N, P, K]
+    subsoil: List[float]  # [Temperature, Humidity, pH, N, P, K]
+    deepsoil: List[float]  # [Temperature, Humidity, pH, N, P, K]
     soil_type: int
     crop_type: int
 
 @app.post("/predict")
 async def predict_fertilizer(input_data: SoilInput):
     try:
+        # Validate input lengths
+        if len(input_data.topsoil) != 6 or len(input_data.subsoil) != 6 or len(input_data.deepsoil) != 6:
+            raise HTTPException(
+                status_code=400,
+                detail="Each soil layer must have exactly 6 features: [Temperature, Humidity, pH, N, P, K]"
+            )
+        
         # Combine all inputs into a single array
         input_array = np.array(
             input_data.topsoil + 
