@@ -1,12 +1,27 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import torch
 import numpy as np
 import uvicorn
 from typing import List
 import os
+import logging
 
-app = FastAPI()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="Fertilizer Prediction API")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Define the model architecture
 class FeatureTokenizer(torch.nn.Module):
@@ -50,7 +65,9 @@ if not os.path.exists(model_path):
 try:
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
+    logger.info("Model loaded successfully")
 except Exception as e:
+    logger.error(f"Error loading model: {str(e)}")
     raise Exception(f"Error loading model: {str(e)}")
 
 # Define fertilizer labels
@@ -71,15 +88,31 @@ class SoilInput(BaseModel):
     soil_type: int
     crop_type: int
 
+@app.get("/")
+async def root():
+    return {"message": "Fertilizer Prediction API is running"}
+
 @app.post("/predict")
 async def predict_fertilizer(input_data: SoilInput):
     try:
+        logger.info(f"Received prediction request: {input_data}")
+        
         # Validate input lengths
         if len(input_data.topsoil) != 6 or len(input_data.subsoil) != 6 or len(input_data.deepsoil) != 6:
-            raise HTTPException(
-                status_code=400,
-                detail="Each soil layer must have exactly 6 features: [Temperature, Humidity, pH, N, P, K]"
-            )
+            error_msg = "Each soil layer must have exactly 6 features: [Temperature, Humidity, pH, N, P, K]"
+            logger.error(error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
+        
+        # Validate soil type and crop type
+        if input_data.soil_type < 0 or input_data.soil_type > 5:
+            error_msg = "soil_type must be between 0 and 5"
+            logger.error(error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
+        
+        if input_data.crop_type < 0 or input_data.crop_type > 1:
+            error_msg = "crop_type must be 0 (rice) or 1 (coconut)"
+            logger.error(error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
         
         # Combine all inputs into a single array
         input_array = np.array(
@@ -97,12 +130,18 @@ async def predict_fertilizer(input_data: SoilInput):
             output = model(input_tensor)
             predicted_class = torch.argmax(output, dim=1).item()
             
-        return {
+        result = {
             "predicted_class": predicted_class,
             "fertilizer": fertilizer_labels[predicted_class]
         }
+        
+        logger.info(f"Prediction result: {result}")
+        return result
+        
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        error_msg = str(e)
+        logger.error(f"Error during prediction: {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 
