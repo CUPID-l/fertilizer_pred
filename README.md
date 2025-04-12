@@ -1,3 +1,14 @@
+---
+title: fertilizer_pred
+emoji: 🌱
+colorFrom: green
+colorTo: yellow
+sdk: docker
+sdk_version: "3.0.0"
+app_file: app.py
+pinned: false
+---
+
 # Fertilizer Prediction Model API
 
 This is a FastAPI-based web service that predicts the appropriate fertilizer based on soil parameters.
