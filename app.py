@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import uvicorn
 from typing import List
+import os
 
 app = FastAPI()
 
@@ -40,8 +41,17 @@ num_features = 23
 num_classes = 7
 
 model = FTTransformer(num_features=num_features, num_classes=num_classes).to(device)
-model.load_state_dict(torch.load('fttransf_new.pth', map_location=device))
-model.eval()
+
+# Check if model file exists
+model_path = 'fttransf_new.pth'
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file {model_path} not found. Please make sure the model file is in the correct directory.")
+
+try:
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+except Exception as e:
+    raise Exception(f"Error loading model: {str(e)}")
 
 # Define fertilizer labels
 fertilizer_labels = {
