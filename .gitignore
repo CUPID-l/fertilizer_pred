@@ -30,12 +30,6 @@ ENV/
 *.swp
 *.swo
 
-# Model files
-*.pth
-*.pt
-*.h5
-*.pkl
-
 # Logs
 *.log
 
