@@ -7,6 +7,7 @@ sdk: docker
 sdk_version: "3.0.0"
 app_file: app.py
 pinned: false
+app_port: 8000
 ---
 
 # Fertilizer Prediction Model API
