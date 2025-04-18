@@ -38,3 +38,4 @@ ENV/
 Thumbs.db 
 
 /test_api.py
+/test.ipynb
