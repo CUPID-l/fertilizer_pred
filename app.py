@@ -116,10 +116,11 @@ async def predict_fertilizer(input_data: SoilInput):
             logger.error(error_msg)
             raise HTTPException(status_code=400, detail=error_msg)
         
-        if input_data.crop_type < 0 or input_data.crop_type > 1:
-            error_msg = "crop_type must be 0 (rice) or 1 (coconut)"
-            logger.error(error_msg)
-            raise HTTPException(status_code=400, detail=error_msg)
+        # Remove crop_type validation to match test.ipynb
+        # if input_data.crop_type < 0 or input_data.crop_type > 1:
+        #     error_msg = "crop_type must be 0 (rice) or 1 (coconut)"
+        #     logger.error(error_msg)
+        #     raise HTTPException(status_code=400, detail=error_msg)
         
         # Combine all inputs into a single array
         input_array = np.array(
