@@ -36,3 +36,5 @@ ENV/
 # System Files
 .DS_Store
 Thumbs.db 
+
+/test_api.py

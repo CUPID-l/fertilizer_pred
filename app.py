@@ -66,6 +66,13 @@ try:
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     logger.info("Model loaded successfully")
+    
+    # Test the model with a sample input
+    test_input = torch.randn(1, num_features).to(device)
+    with torch.no_grad():
+        test_output = model(test_input)
+        logger.info(f"Model test output shape: {test_output.shape}")
+        logger.info(f"Model test output: {test_output}")
 except Exception as e:
     logger.error(f"Error loading model: {str(e)}")
     raise Exception(f"Error loading model: {str(e)}")
@@ -128,11 +135,21 @@ async def predict_fertilizer(input_data: SoilInput):
         
         with torch.no_grad():
             output = model(input_tensor)
+            # Get probabilities using softmax
+            probabilities = torch.nn.functional.softmax(output, dim=1)
             predicted_class = torch.argmax(output, dim=1).item()
+            
+            # Log detailed prediction information
+            logger.info(f"Raw model output: {output}")
+            logger.info(f"Class probabilities: {probabilities}")
+            logger.info(f"Predicted class: {predicted_class}")
             
         result = {
             "predicted_class": predicted_class,
-            "fertilizer": fertilizer_labels[predicted_class]
+            "fertilizer": fertilizer_labels[predicted_class],
+            "probabilities": {
+                label: float(prob) for label, prob in zip(fertilizer_labels.values(), probabilities[0].tolist())
+            }
         }
         
         logger.info(f"Prediction result: {result}")
